@@ -26,6 +26,12 @@ public class Usuario implements UserDetails {
     private String login;
     private String senha;
 
+    // CORREÇÃO AQUI ✔✔✔
+    public Usuario(String login, String senhaCriptografada) {
+        this.login = login;
+        this.senha = senhaCriptografada;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_USER"));
