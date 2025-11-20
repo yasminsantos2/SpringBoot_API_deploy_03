@@ -23,15 +23,32 @@ public class SecurityFilter extends OncePerRequestFilter {
     private UsuarioRepository repository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+
         var tokenJWT = recuperarToken(request);
 
-        if (tokenJWT != null) {
-            var subject = tokenService.getSubject(tokenJWT);
-            var usuario = repository.findByLogin(subject);
+        System.out.println("=== SECURITY FILTER ===");
+        System.out.println("Rota: " + request.getMethod() + " " + request.getRequestURI());
 
-            var authentication = new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        if (tokenJWT == null) {
+            System.out.println("Nenhum token JWT foi enviado.");
+        } else {
+            System.out.println("Token recebido (JWT): " + tokenJWT);
+            try {
+                var subject = tokenService.getSubject(tokenJWT);
+                System.out.println("Subject extraído do token: " + subject);
+
+                var usuario = repository.findByLogin(subject);
+                System.out.println("Usuário encontrado: " + (usuario != null ? usuario.getClass() : "null"));
+
+                var authentication = new UsernamePasswordAuthenticationToken(
+                        usuario, null, usuario.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (Exception e) {
+                System.out.println("ERRO AO VALIDAR TOKEN: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            }
         }
 
         filterChain.doFilter(request, response);
@@ -39,11 +56,10 @@ public class SecurityFilter extends OncePerRequestFilter {
 
     private String recuperarToken(HttpServletRequest request) {
         var authorizationHeader = request.getHeader("Authorization");
+        System.out.println("Header Authorization: " + authorizationHeader);
         if (authorizationHeader != null) {
             return authorizationHeader.replace("Bearer ", "");
         }
-
         return null;
     }
-
 }
