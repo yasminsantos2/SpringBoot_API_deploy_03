@@ -17,12 +17,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class ConsultaController {
 
     @Autowired
-    private AgendaDeConsultas agenda;
+    private AgendaDeConsultas agenda;   // usa o import, não o pacote controller
 
     @PostMapping
     @Transactional
-    public ResponseEntity agendar(@RequestBody @Valid DadosAgendamentoConsulta dados) {
+    public ResponseEntity<DadosDetalhamentoConsulta> agendar(
+            @RequestBody @Valid DadosAgendamentoConsulta dados) {
+
+        agenda.agendar(dados);
         return ResponseEntity.ok(new DadosDetalhamentoConsulta(null, null, null, null));
     }
-
 }
