@@ -1,14 +1,14 @@
 package med.voll.api.domain.consulta;
 
 import med.voll.api.domain.ValidacaoException;
-import med.voll.api.domain.consulta.Consulta;
-import med.voll.api.domain.consulta.ConsultaRepository;
-import med.voll.api.domain.consulta.DadosAgendamentoConsulta;
+import med.voll.api.domain.consulta.validacoes.ValidadorAgendamentoDeConsulta;
 import med.voll.api.domain.medico.Medico;
 import med.voll.api.domain.medico.MedicoRepository;
 import med.voll.api.domain.paciente.PacienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class AgendaDeConsultas {
@@ -22,33 +22,54 @@ public class AgendaDeConsultas {
     @Autowired
     private PacienteRepository pacienteRepository;
 
-    public void agendar(DadosAgendamentoConsulta dados) {
+    @Autowired
+    private List<ValidadorAgendamentoDeConsulta> validadores;
+
+    public DadosDetalhamentoConsulta agendar(DadosAgendamentoConsulta dados) {
+
+        // valida se o paciente existe
         if (!pacienteRepository.existsById(dados.idPaciente())) {
             throw new ValidacaoException("Id do paciente informado não existe!");
         }
 
+        // se informou médico, valida se existe
         if (dados.idMedico() != null && !medicoRepository.existsById(dados.idMedico())) {
             throw new ValidacaoException("Id do médico informado não existe!");
         }
+
+        // validações de regra de negócio (horário, médico ativo, etc.)
+        validadores.forEach(v -> v.validar(dados));
 
         var paciente = pacienteRepository.getReferenceById(dados.idPaciente());
         var medico = escolherMedico(dados);
 
         var consulta = new Consulta(null, medico, paciente, dados.data());
         consultaRepository.save(consulta);
+
+        return new DadosDetalhamentoConsulta(consulta);
     }
 
     private Medico escolherMedico(DadosAgendamentoConsulta dados) {
+
+        // se veio id do médico, usa ele
         if (dados.idMedico() != null) {
             return medicoRepository.getReferenceById(dados.idMedico());
         }
 
+        // se não veio id de médico, especialidade é obrigatória
         if (dados.especialidade() == null) {
-            throw new ValidacaoException("Especialidade é obrigatória quando médico não for escolhido!");
+            throw new ValidacaoException("Especialidade é obrigatória quando médico não for escolhido");
         }
 
-        return medicoRepository.escolherMedicoAleatorioLivreNaData(dados.especialidade(), dados.data());
+        var medico = medicoRepository.escolherMedicoAleatorioLivreNaData(
+                dados.especialidade(),
+                dados.data()
+        );
+
+        if (medico == null) {
+            throw new ValidacaoException("Não há médico disponível nessa data");
+        }
+
+        return medico;
     }
-
-
 }

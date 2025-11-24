@@ -25,30 +25,27 @@ public class SecurityFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-
-        var tokenJWT = recuperarToken(request);
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
 
         System.out.println("=== SECURITY FILTER ===");
         System.out.println("Rota: " + request.getMethod() + " " + request.getRequestURI());
 
-        if (tokenJWT == null) {
-            System.out.println("Nenhum token JWT foi enviado.");
-        } else {
-            System.out.println("Token recebido (JWT): " + tokenJWT);
-            try {
-                var subject = tokenService.getSubject(tokenJWT);
-                System.out.println("Subject extraído do token: " + subject);
+        var tokenJWT = recuperarToken(request);
+        System.out.println("Header Authorization: " + request.getHeader("Authorization"));
+        System.out.println("Token JWT: " + tokenJWT);
 
-                var usuario = repository.findByLogin(subject);
-                System.out.println("Usuário encontrado: " + (usuario != null ? usuario.getClass() : "null"));
+        if (tokenJWT != null) {
+            var subject = tokenService.getSubject(tokenJWT); // login do usuário
+            var usuario = repository.findByLogin(subject);
 
-                var authentication = new UsernamePasswordAuthenticationToken(
-                        usuario, null, usuario.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            } catch (Exception e) {
-                System.out.println("ERRO AO VALIDAR TOKEN: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-            }
+            var authentication = new UsernamePasswordAuthenticationToken(
+                    usuario,
+                    null,
+                    usuario.getAuthorities()
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);
@@ -56,8 +53,7 @@ public class SecurityFilter extends OncePerRequestFilter {
 
     private String recuperarToken(HttpServletRequest request) {
         var authorizationHeader = request.getHeader("Authorization");
-        System.out.println("Header Authorization: " + authorizationHeader);
-        if (authorizationHeader != null) {
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             return authorizationHeader.replace("Bearer ", "");
         }
         return null;
