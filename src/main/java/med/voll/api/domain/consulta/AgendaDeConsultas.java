@@ -27,21 +27,25 @@ public class AgendaDeConsultas {
 
     public DadosDetalhamentoConsulta agendar(DadosAgendamentoConsulta dados) {
 
-        // valida se o paciente existe
+        // 1) Paciente existe?
         if (!pacienteRepository.existsById(dados.idPaciente())) {
             throw new ValidacaoException("Id do paciente informado não existe!");
         }
 
-        // se informou médico, valida se existe
+        // 2) Médico existe (se foi informado)?
         if (dados.idMedico() != null && !medicoRepository.existsById(dados.idMedico())) {
             throw new ValidacaoException("Id do médico informado não existe!");
         }
 
-        // validações de regra de negócio (horário, médico ativo, etc.)
+        // 3) Regras de negócio (horário, ativo, etc.)
         validadores.forEach(v -> v.validar(dados));
 
         var paciente = pacienteRepository.getReferenceById(dados.idPaciente());
-        var medico = escolherMedico(dados);
+        var medico   = escolherMedico(dados);
+
+        if (medico == null) {
+            throw new ValidacaoException("Não existe médico disponível nessa data!");
+        }
 
         var consulta = new Consulta(null, medico, paciente, dados.data());
         consultaRepository.save(consulta);
@@ -66,6 +70,7 @@ public class AgendaDeConsultas {
                 dados.data()
         );
 
+        // se não achar médico livre, erro
         if (medico == null) {
             throw new ValidacaoException("Não há médico disponível nessa data");
         }
