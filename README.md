@@ -68,6 +68,11 @@ Cliente → Controller → Service/Domain → Repository → MySQL
 <li>Porta 8081 livre</li>
 </ul>
 
+<h2>🗄 <strong>Faça o Git Clone do projeto</h2>
+
+
+<pre>https://github.com/yasminsantos2/SpringBoot_API_deploy_03.git</pre>
+
 <hr>
 
 <h2>🗄 <strong>Banco de Dados</strong></h2>
@@ -137,7 +142,7 @@ Cliente → Controller → Service/Domain → Repository → MySQL
 
 <hr>
 
-<h2>👨‍💻 <strong>Autor</strong></h2>
+<h2>👨‍💻 <strong>Autora</strong></h2>
 
 <p>
 <strong>Yasmin Costa</strong><br>
