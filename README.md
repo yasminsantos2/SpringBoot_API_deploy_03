@@ -84,7 +84,6 @@ Cliente → Controller → Service/Domain → Repository → MySQL
   <li>Entre na pasta do projeto:</li>
 </ol>
 
-<pre>cd SpringBoot_API_deploy_03</pre>
 
 <hr>
 
